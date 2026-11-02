@@ -1,5 +1,6 @@
 package app;
 
+import cardapio.ItemCardapio;
 import cardapio.Lanche;
 import java.util.Collection;
 import java.util.List;
@@ -61,8 +62,8 @@ public class MenuConsole {
     public void exibirPedido(Pedido pedido) {
         System.out.println();
         System.out.println("Pedido #" + pedido.getNumero() + " - Cliente: " + pedido.getNomeCliente());
-        for (Lanche l : pedido.getItens()) {
-            System.out.println("  - " + l.getNome() + " - " + formatarPreco(l.getPreco()));
+        for (ItemCardapio item : pedido.getItens()) {
+            System.out.println("  - " + item.getDescricao() + " - " + formatarPreco(item.getPreco()));
         }
         System.out.println("  Total: " + formatarPreco(pedido.calcularTotal()));
     }
