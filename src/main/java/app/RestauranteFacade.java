@@ -5,6 +5,7 @@ import cardapio.LancheFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import pedido.GerenciadorPedidos;
 import pedido.Pedido;
 
@@ -105,6 +106,10 @@ public class RestauranteFacade {
 
     public Collection<Pedido> listarPedidos() {
         return gerenciador.getPedidos();
+    }
+
+    public Set<String> getCombinacoesDoDia() {
+        return gerenciador.getCombinacoesDoDia();
     }
 
     public double calcularTotalDoDia() {

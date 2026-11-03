@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.TreeSet;
 import pedido.Pedido;
 
 public class MenuConsole {
@@ -101,10 +103,15 @@ public class MenuConsole {
         }
     }
 
-    public void exibirFechamentoDoDia(double total) {
+    public void exibirFechamentoDoDia(double total, Set<String> combinacoes) {
         System.out.println();
         System.out.println("=== FECHAMENTO DO DIA ===");
         System.out.println("Total arrecadado: " + formatarPreco(total));
+        System.out.println("Combinações diferentes pedidas: " + combinacoes.size());
+        // O HashSet não tem ordem; ordenamos só para exibir sempre na mesma sequência.
+        for (String combinacao : new TreeSet<>(combinacoes)) {
+            System.out.println("  - " + combinacao);
+        }
     }
 
     public int lerNumeroPedido() {

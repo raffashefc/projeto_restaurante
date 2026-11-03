@@ -1,7 +1,9 @@
 package pedido;
 
+import cardapio.ItemCardapio;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class GerenciadorPedidos {
     private HashMap<Integer, Pedido> pedidos = new HashMap<>();
@@ -26,6 +28,18 @@ public class GerenciadorPedidos {
 
     public Collection<Pedido> getPedidos() {
         return pedidos.values();
+    }
+
+    // Percorre os itens de todos os pedidos e guarda cada descrição em um HashSet.
+    // O conjunto não aceita repetidos, então o size() é o número de combinações diferentes.
+    public HashSet<String> getCombinacoesDoDia() {
+        HashSet<String> combinacoes = new HashSet<>();
+        for (Pedido p : pedidos.values()) {
+            for (ItemCardapio item : p.getItens()) {
+                combinacoes.add(item.getDescricao());
+            }
+        }
+        return combinacoes;
     }
 
     public double calcularTotalDoDia() {

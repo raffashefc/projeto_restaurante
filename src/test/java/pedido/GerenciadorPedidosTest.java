@@ -5,7 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import cardapio.ComBaconExtra;
+import cardapio.ComCheddar;
 import cardapio.Lanche;
+import cardapio.LancheFactory;
+import java.util.HashSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -86,5 +90,61 @@ class GerenciadorPedidosTest {
         Pedido p2 = gerenciador.criarPedido("Bia");
 
         assertEquals(2, p2.getNumero());
+    }
+
+    @Test
+    @DisplayName("Combinações repetidas contam uma vez só")
+    void combinacoesRepetidasContamUmaVez() {
+        // Arrange: X-Bacon (2 vezes), X-Bacon + cheddar e X-Salada sem tomate
+        Pedido p1 = gerenciador.criarPedido("Ana");
+        p1.adicionarItem(LancheFactory.xBacon());
+        Pedido p2 = gerenciador.criarPedido("Bia");
+        p2.adicionarItem(LancheFactory.xBacon());
+        p2.adicionarItem(new ComCheddar(LancheFactory.xBacon()));
+        Pedido p3 = gerenciador.criarPedido("Caio");
+        Lanche semTomate = LancheFactory.xSalada();
+        semTomate.setTomate(false);
+        p3.adicionarItem(semTomate);
+
+        // Act
+        HashSet<String> combinacoes = gerenciador.getCombinacoesDoDia();
+
+        // Assert
+        assertEquals(3, combinacoes.size());
+        assertTrue(combinacoes.contains("X-Bacon"));
+        assertTrue(combinacoes.contains("X-Bacon + cheddar"));
+        assertTrue(combinacoes.contains("X-Salada sem tomate"));
+    }
+
+    @Test
+    @DisplayName("Sem pedidos, não há combinações")
+    void semPedidosNaoHaCombinacoes() {
+        assertEquals(0, gerenciador.getCombinacoesDoDia().size());
+    }
+
+    @Test
+    @DisplayName("Pedido cancelado não conta nas combinações")
+    void pedidoCanceladoNaoContaNasCombinacoes() {
+        Pedido p1 = gerenciador.criarPedido("Ana");
+        p1.adicionarItem(LancheFactory.xBurger());
+        Pedido p2 = gerenciador.criarPedido("Bia");
+        p2.adicionarItem(LancheFactory.xBacon());
+
+        gerenciador.cancelarPedido(p1.getNumero());
+
+        HashSet<String> combinacoes = gerenciador.getCombinacoesDoDia();
+        assertEquals(1, combinacoes.size());
+        assertTrue(combinacoes.contains("X-Bacon"));
+    }
+
+    @Test
+    @DisplayName("Limitação: a ordem dos adicionais gera descrições diferentes")
+    void ordemDosAdicionaisContaComoCombinacoesDiferentes() {
+        Pedido p = gerenciador.criarPedido("Ana");
+        p.adicionarItem(new ComBaconExtra(new ComCheddar(LancheFactory.xBacon())));
+        p.adicionarItem(new ComCheddar(new ComBaconExtra(LancheFactory.xBacon())));
+
+        // Mesmos adicionais e mesmo preço, mas o HashSet conta duas descrições
+        assertEquals(2, gerenciador.getCombinacoesDoDia().size());
     }
 }

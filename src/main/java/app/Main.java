@@ -22,7 +22,7 @@ public class Main {
                     break;
                 case 3:
                     double total = sistema.calcularTotalDoDia();
-                    menu.exibirFechamentoDoDia(total);
+                    menu.exibirFechamentoDoDia(total, sistema.getCombinacoesDoDia());
                     break;
                 case 4:
                     modificarPedido(sistema, menu);
