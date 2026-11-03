@@ -3,13 +3,16 @@ package pedido;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import cardapio.ComBaconExtra;
+import cardapio.ComCheddar;
 import cardapio.ItemCardapio;
 import cardapio.Lanche;
+import cardapio.LancheFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("Testes da classe Pedido")
-class Pedidotest {
+class PedidoTest {
 
     @Test
     @DisplayName("Total soma o preço de todos os itens")
@@ -64,5 +67,21 @@ class Pedidotest {
 
         // Assert
         assertEquals(19.00, total, 0.0001);
+    }
+
+    @Test
+    @DisplayName("Pedido soma o preço de um lanche com adicionais")
+    void pedidoSomaLancheComAdicionais() {
+        // Arrange
+        ItemCardapio lanche = new ComBaconExtra(new ComCheddar(LancheFactory.xBacon()));
+        Pedido pedido = new Pedido(1, "Ana");
+        pedido.adicionarItem(lanche);
+        pedido.adicionarItem(LancheFactory.xBurger());
+
+        // Act
+        double total = pedido.calcularTotal();
+
+        // Assert: 32,00 + 16,00
+        assertEquals(48.00, total, 0.0001);
     }
 }
