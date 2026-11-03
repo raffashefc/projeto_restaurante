@@ -5,7 +5,7 @@
 Construir o sistema de um restaurante em Java, com cardápio, pedidos e fechamento do dia, organizado em pacotes e com cada classe cuidando de uma responsabilidade.
 
 - **Nível 1:** cardápio, pedidos e fechamento do dia.
-- **Nível 2 (até aqui):** interface `ItemCardapio` e `LancheFactory`.
+- **Nível 2 (até aqui):** interface `ItemCardapio`, `LancheFactory` e adicionais com Decorator.
 
 ---
 
@@ -23,14 +23,18 @@ projeto_restaurante/
     │   ├── cardapio/
     │   │   ├── ItemCardapio.java
     │   │   ├── Lanche.java
-    │   │   └── LancheFactory.java
+    │   │   ├── LancheFactory.java
+    │   │   ├── AdicionalDecorator.java
+    │   │   ├── ComCheddar.java
+    │   │   └── ComBaconExtra.java
     │   └── pedido/
     │       ├── Pedido.java
     │       └── GerenciadorPedidos.java
     └── test/java/
         ├── cardapio/
         │   ├── LancheTest.java
-        │   └── LancheFactoryTest.java
+        │   ├── LancheFactoryTest.java
+        │   └── AdicionaisTest.java
         └── pedido/
             ├── PedidoTest.java
             └── GerenciadorPedidosTest.java
@@ -39,7 +43,7 @@ projeto_restaurante/
 | Pacote | O que guarda | Por que ali |
 |---|---|---|
 | `app` | `Main`, `MenuConsole`, `Restaurante` | É a camada que conversa com a pessoa e coordena as operações. Tudo que mexe com tela e fluxo fica junto. |
-| `cardapio` | `ItemCardapio`, `Lanche`, `LancheFactory` | É o "produto" do restaurante: o que se vende e como é criado. Não depende de nenhum outro pacote. |
+| `cardapio` | `ItemCardapio`, `Lanche`, `LancheFactory`, adicionais | É o "produto" do restaurante: o que se vende, como é criado e o que pode ser acrescentado. Não depende de nenhum outro pacote. |
 | `pedido` | `Pedido`, `GerenciadorPedidos` | Tudo que trata de comandas: uma comanda (`Pedido`) e o conjunto delas (`GerenciadorPedidos`). |
 | `financeiro` e `util` | (ainda vazios) | Só serão criados quando houver classe para colocar neles. O Git não versiona pasta vazia. |
 
@@ -62,6 +66,9 @@ Com isso, dá para trocar o console por outra interface (por exemplo, uma tela g
 | `ItemCardapio` | Contrato do que pode entrar em um pedido: tem descrição e preço |
 | `Lanche` | Guarda nome, preço e ingredientes, com validação nos setters. Implementa `ItemCardapio` |
 | `LancheFactory` | Cria os lanches padrão do cardápio (X-Burger, X-Salada, X-Bacon) |
+| `AdicionalDecorator` | Base dos adicionais: é um `ItemCardapio` e guarda outro `ItemCardapio` dentro de si |
+| `ComCheddar` | Acrescenta `+ cheddar` à descrição e R$ 4,00 ao preço |
+| `ComBaconExtra` | Acrescenta `+ bacon extra` à descrição e R$ 6,00 ao preço |
 | `Pedido` | Cuida de **uma** comanda: número, cliente e lista de `ItemCardapio` |
 | `GerenciadorPedidos` | Guarda **todos** os pedidos (`HashMap`), gera o número e soma o total do dia |
 | `Restaurante` | Coordena as operações e pede os lanches à factory |
@@ -76,6 +83,7 @@ Com isso, dá para trocar o console por outra interface (por exemplo, uma tela g
 
 - **Lanche:** o nome não pode ser nulo nem vazio, e o preço não pode ser negativo. O construtor reutiliza os setters, então a validação fica em um lugar só. Valor inválido lança `IllegalArgumentException`. A lista de ingredientes é copiada na criação, então dois lanches nunca compartilham a mesma lista.
 - **Pedido:** o nome do cliente não pode ser nulo nem vazio. O número chega pronto pelo construtor. `adicionarItem` recebe um `ItemCardapio` (não só `Lanche`). `calcularTotal()` percorre a lista com `for`.
+- **Adicionais:** cada adicional embrulha um `ItemCardapio`, soma o seu preço ao do item embrulhado e acrescenta a sua descrição no formato exato `+ cheddar` ou `+ bacon extra` (espaço, sinal de mais, espaço, minúsculas). Embrulhar um item nulo lança `IllegalArgumentException`. O lanche original nunca é alterado.
 - **GerenciadorPedidos:** `criarPedido` gera o número com `contadorPedidos++`. O usuário nunca digita o número de um pedido novo, então a numeração não se repete (o `HashMap` não recusa chave repetida, ele **substitui**).
 - **Lanche novo a cada escolha:** cada método da `LancheFactory` faz `new Lanche(...)` a cada chamada. Dois clientes que pedem X-Bacon recebem objetos diferentes, e alterar um não muda o outro.
 
@@ -280,15 +288,74 @@ public interface ItemCardapio {
 
 ---
 
-### 7. Testes com JUnit
+### 7. Padrão de projeto: Decorator (Nível 2)
 
-Foram escritos 17 testes em `src/test/java`, seguindo o padrão AAA (Arrange, Act, Assert):
+**Onde está:** `AdicionalDecorator`, `ComCheddar` e `ComBaconExtra`, no pacote `cardapio`.
+
+**O problema que resolveu:** o cliente pode pedir qualquer combinação de adicionais em um lanche. Sem o Decorator, seria preciso uma classe para cada combinação (`XBaconComCheddar`, `XBaconComCheddarEBaconExtra`, `XBurgerComBaconExtra`...), e o número de classes dobraria a cada adicional novo. A outra saída, colocar campos como `comCheddar` e `comBaconExtra` dentro de `Lanche`, faria a classe do lanche mudar toda vez que surgisse um adicional.
+
+**Com o Decorator**, cada adicional é uma classe pequena que **embrulha** um `ItemCardapio` e acrescenta uma responsabilidade, sem mexer no lanche:
+
+```java
+public abstract class AdicionalDecorator implements ItemCardapio {
+    protected final ItemCardapio item;
+
+    protected AdicionalDecorator(ItemCardapio item) {
+        if (item == null) {
+            throw new IllegalArgumentException("O item embrulhado não pode ser nulo.");
+        }
+        this.item = item;
+    }
+}
+
+public class ComCheddar extends AdicionalDecorator {
+    private static final double PRECO = 4.00;
+
+    public ComCheddar(ItemCardapio item) { super(item); }
+
+    @Override
+    public String getDescricao() {
+        return item.getDescricao() + " + cheddar";
+    }
+
+    @Override
+    public double getPreco() {
+        return item.getPreco() + PRECO;
+    }
+}
+```
+
+O `ComBaconExtra` é igual, com `" + bacon extra"` e R$ 6,00. As combinações são montadas na hora, encaixando um adicional dentro do outro:
+
+```java
+ItemCardapio lanche = LancheFactory.xBacon();
+lanche = new ComCheddar(lanche);
+lanche = new ComBaconExtra(lanche);
+
+lanche.getDescricao();  // "X-Bacon + cheddar + bacon extra"
+lanche.getPreco();      // 32.0
+```
+
+| Camada | Descrição | Preço |
+|---|---|---|
+| `LancheFactory.xBacon()` | X-Bacon | R$ 22,00 |
+| `new ComCheddar(...)` | X-Bacon + cheddar | R$ 22,00 + R$ 4,00 = R$ 26,00 |
+| `new ComBaconExtra(...)` | X-Bacon + cheddar + bacon extra | R$ 26,00 + R$ 6,00 = R$ 32,00 |
+
+**Por que funciona:** os adicionais implementam `ItemCardapio`, a mesma interface do `Lanche`. Por isso um adicional pode embrulhar um lanche ou outro adicional, e o `Pedido` não precisa saber a diferença: ele só chama `getDescricao()` e `getPreco()`. Um adicional novo (por exemplo, `ComOvo`) é só uma classe nova, sem alterar nenhuma existente.
+
+---
+
+### 8. Testes com JUnit
+
+Foram escritos 24 testes em `src/test/java`, seguindo o padrão AAA (Arrange, Act, Assert):
 
 | Classe de teste | Testes |
 |---|---|
 | `LancheTest` (5) | lanche válido guarda nome e preço; nome vazio lança exceção; nome nulo lança exceção; preço negativo lança exceção; lanche é um `ItemCardapio` e a descrição é o nome |
 | `LancheFactoryTest` (5) | nome, preço e ingredientes de cada lanche (3 testes); duas chamadas devolvem objetos diferentes; alterar um lanche não afeta o outro |
-| `PedidoTest` (4) | total soma o preço dos itens; pedido sem itens tem total zero; cliente vazio lança exceção; pedido aceita qualquer `ItemCardapio` |
+| `AdicionaisTest` (6) | `ComCheddar` e `ComBaconExtra` sozinhos; exemplo completo `X-Bacon + cheddar + bacon extra` = R$ 32,00; ordem invertida muda a descrição mas não o preço; lanche original não é alterado; item nulo lança exceção |
+| `PedidoTest` (5) | total soma o preço dos itens; pedido sem itens tem total zero; cliente vazio lança exceção; pedido aceita qualquer `ItemCardapio`; pedido soma um lanche com adicionais |
 | `GerenciadorPedidosTest` (3) | números sequenciais e sem repetição; buscar pedido inexistente devolve `null`; total do dia soma todos os pedidos |
 
 Exemplo de teste:
@@ -316,11 +383,12 @@ mvn test
 **Saída esperada** quando tudo passa (a ordem e os tempos variam):
 
 ```
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in cardapio.AdicionaisTest
 [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in cardapio.LancheFactoryTest
 [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in cardapio.LancheTest
 [INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in pedido.GerenciadorPedidosTest
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in pedido.PedidoTest
-[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in pedido.PedidoTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
 
@@ -330,7 +398,7 @@ mvn test
 
 ---
 
-### 8. Como rodar o sistema
+### 9. Como rodar o sistema
 
 Pré-requisitos: JDK 17 ou superior e Maven (`sudo apt install maven`).
 
@@ -341,7 +409,7 @@ java -cp target/classes app.Main
 
 ---
 
-### 9. Problemas que apareceram no caminho
+### 10. Problemas que apareceram no caminho
 
 | Problema | Causa | Solução |
 |---|---|---|
@@ -353,7 +421,7 @@ java -cp target/classes app.Main
 
 ---
 
-### 10. O que foi aprendido
+### 11. O que foi aprendido
 
 - Organizar o projeto em pacotes com dependências em uma direção só.
 - Centralizar a validação nos setters e reutilizá-los no construtor.
@@ -361,9 +429,10 @@ java -cp target/classes app.Main
 - Usar a fachada para o `Main` não precisar conhecer as classes de negócio.
 - Usar a factory para concentrar a criação dos lanches e garantir uma instância nova a cada pedido.
 - Depender de uma interface (`ItemCardapio`) em vez de uma classe concreta.
+- Usar o Decorator para combinar adicionais sem criar uma classe por combinação e sem alterar o `Lanche`.
 - Escrever testes unitários com AAA e `assertThrows` para as regras de validação.
 - Usar o `javac` direto para ver a linha exata do erro, que é mais claro que a saída do Maven.
 
-### 11. Próximos passos
+### 12. Próximos passos
 
-- Nível 2: adicionais do lanche.
+- Nível 2: continuar com os próximos itens do enunciado (por exemplo, oferecer os adicionais no menu).
