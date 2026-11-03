@@ -38,15 +38,50 @@ public class RestauranteFacade {
         return gerenciador.criarPedido(nomeCliente);
     }
 
-    // Devolve false se o pedido ou a opção de lanche não existirem.
+    public boolean opcaoLancheValida(int opcao) {
+        return criarLanche(opcao) != null;
+    }
+
+    // Adiciona o lanche sem personalização.
     public boolean adicionarItem(int numeroPedido, int opcaoLanche) {
+        return adicionarItem(numeroPedido, opcaoLanche, new ArrayList<>());
+    }
+
+    // Cria um lanche NOVO, retira os ingredientes pedidos e adiciona ao pedido.
+    // Devolve false se o pedido ou a opção de lanche não existirem.
+    public boolean adicionarItem(int numeroPedido, int opcaoLanche, List<String> ingredientesARetirar) {
         Pedido pedido = gerenciador.buscarPedido(numeroPedido);
         Lanche lanche = criarLanche(opcaoLanche);
         if (pedido == null || lanche == null) {
             return false;
         }
+        retirarIngredientes(lanche, ingredientesARetirar);
         pedido.adicionarItem(lanche);
         return true;
+    }
+
+    private void retirarIngredientes(Lanche lanche, List<String> ingredientesARetirar) {
+        if (ingredientesARetirar == null) {
+            return;
+        }
+        for (String ingrediente : ingredientesARetirar) {
+            switch (ingrediente) {
+                case "queijo":
+                    lanche.setQueijo(false);
+                    break;
+                case "alface":
+                    lanche.setAlface(false);
+                    break;
+                case "tomate":
+                    lanche.setTomate(false);
+                    break;
+                case "cebola":
+                    lanche.setCebola(false);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     public Pedido buscarPedido(int numero) {

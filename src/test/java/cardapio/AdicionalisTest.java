@@ -67,4 +67,16 @@ class AdicionaisTest {
         assertThrows(IllegalArgumentException.class, () -> new ComCheddar(null));
         assertThrows(IllegalArgumentException.class, () -> new ComBaconExtra(null));
     }
+
+    @Test
+    @DisplayName("Adicional sobre lanche personalizado: 'X-Bacon sem cebola + cheddar'")
+    void adicionalSobreLanchePersonalizado() {
+        Lanche lanche = LancheFactory.xBacon();
+        lanche.setCebola(false);
+
+        ItemCardapio item = new ComCheddar(lanche);
+
+        assertEquals("X-Bacon sem cebola + cheddar", item.getDescricao());
+        assertEquals(26.00, item.getPreco(), 0.0001);
+    }
 }

@@ -1,5 +1,6 @@
 package app;
 
+import java.util.List;
 import pedido.Pedido;
 
 public class Main {
@@ -48,11 +49,14 @@ public class Main {
             menu.exibirCardapio(sistema.getCardapio());
             int escolha = menu.lerOpcaoLanche();
 
-            if (sistema.adicionarItem(pedido.getNumero(), escolha)) {
-                adicionarMais = menu.perguntarMaisItem();
-            } else {
+            if (!sistema.opcaoLancheValida(escolha)) {
                 menu.exibirMensagem("Lanche inválido, tente de novo.");
+                continue;
             }
+
+            List<String> retirar = menu.lerIngredientesParaRetirar();
+            sistema.adicionarItem(pedido.getNumero(), escolha, retirar);
+            adicionarMais = menu.perguntarMaisItem();
         }
 
         menu.exibirPedido(pedido);

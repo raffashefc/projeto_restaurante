@@ -2,6 +2,7 @@ package cardapio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,5 +46,73 @@ class LancheTest {
 
         assertEquals("X-Salada", item.getDescricao());
         assertEquals(18.00, item.getPreco(), 0.0001);
+    }
+
+    @Test
+    @DisplayName("Lanche novo vem com todos os ingredientes (descrição = nome)")
+    void lancheNovoVemComTodosOsIngredientes() {
+        Lanche lanche = new Lanche("X-Burger", 16.00);
+
+        assertTrue(lanche.isQueijo());
+        assertTrue(lanche.isAlface());
+        assertTrue(lanche.isTomate());
+        assertTrue(lanche.isCebola());
+        assertEquals("X-Burger", lanche.getDescricao());
+    }
+
+    @Test
+    @DisplayName("Retirar cebola acrescenta 'sem cebola' à descrição")
+    void retirarCebolaMudaDescricao() {
+        Lanche lanche = LancheFactory.xBacon();
+
+        lanche.setCebola(false);
+
+        assertEquals("X-Bacon sem cebola", lanche.getDescricao());
+    }
+
+    @Test
+    @DisplayName("Vários ingredientes retirados aparecem na ordem queijo, alface, tomate, cebola")
+    void variosIngredientesRetirados() {
+        Lanche lanche = LancheFactory.xBacon();
+
+        lanche.setCebola(false);
+        lanche.setQueijo(false);
+        lanche.setTomate(false);
+
+        assertEquals("X-Bacon sem queijo sem tomate sem cebola", lanche.getDescricao());
+    }
+
+    @Test
+    @DisplayName("Retirar ingrediente não muda o preço")
+    void retirarIngredienteNaoMudaPreco() {
+        Lanche lanche = LancheFactory.xBacon();
+
+        lanche.setCebola(false);
+        lanche.setAlface(false);
+
+        assertEquals(22.00, lanche.getPreco(), 0.0001);
+    }
+
+    @Test
+    @DisplayName("Retirar ingrediente que o lanche não tinha também funciona")
+    void retirarIngredienteQueNaoTinha() {
+        Lanche lanche = LancheFactory.xBurger();
+
+        lanche.setCebola(false);
+
+        assertEquals("X-Burger sem cebola", lanche.getDescricao());
+        assertEquals(16.00, lanche.getPreco(), 0.0001);
+    }
+
+    @Test
+    @DisplayName("Personalizar um lanche não afeta o outro")
+    void personalizarUmNaoAfetaOutro() {
+        Lanche primeiro = LancheFactory.xBacon();
+        Lanche segundo = LancheFactory.xBacon();
+
+        primeiro.setCebola(false);
+
+        assertEquals("X-Bacon sem cebola", primeiro.getDescricao());
+        assertEquals("X-Bacon", segundo.getDescricao());
     }
 }

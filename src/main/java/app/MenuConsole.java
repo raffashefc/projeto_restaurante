@@ -2,6 +2,7 @@ package app;
 
 import cardapio.ItemCardapio;
 import cardapio.Lanche;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -47,8 +48,26 @@ public class MenuConsole {
     }
 
     public boolean perguntarMaisItem() {
+        return lerSimNao("Deseja adicionar mais um item? (s/n): ");
+    }
+
+    // Pergunta quais ingredientes retirar e devolve os nomes escolhidos.
+    public List<String> lerIngredientesParaRetirar() {
+        List<String> retirar = new ArrayList<>();
+        String[] ingredientes = {"queijo", "alface", "tomate", "cebola"};
+
+        System.out.println("Quer retirar algum ingrediente? (o preço não muda)");
+        for (String ingrediente : ingredientes) {
+            if (lerSimNao("  Retirar " + ingrediente + "? (s/n): ")) {
+                retirar.add(ingrediente);
+            }
+        }
+        return retirar;
+    }
+
+    private boolean lerSimNao(String pergunta) {
         while (true) {
-            System.out.print("Deseja adicionar mais um item? (s/n): ");
+            System.out.print(pergunta);
             String resposta = scanner.nextLine().trim().toLowerCase();
             if (resposta.equals("s")) {
                 return true;
