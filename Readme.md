@@ -6,7 +6,7 @@ Construir o sistema de um restaurante em Java, com cardápio, pedidos e fechamen
 
 - **Nível 1:** cardápio, pedidos e fechamento do dia.
 - **Nível 2:** interface `ItemCardapio`, `LancheFactory` e adicionais com Decorator.
-- **Nível 3 (até aqui):** personalização do lanche (retirar ingredientes sem mudar o preço).
+- **Nível 3 (até aqui):** personalização do lanche (retirar ingredientes sem mudar o preço) e modificação de pedidos (acrescentar item, remover item e cancelar pedido).
 
 ---
 
@@ -70,10 +70,10 @@ Com isso, dá para trocar o console por outra interface (por exemplo, uma tela g
 | `AdicionalDecorator` | Base dos adicionais: é um `ItemCardapio` e guarda outro `ItemCardapio` dentro de si |
 | `ComCheddar` | Acrescenta `+ cheddar` à descrição e R$ 4,00 ao preço |
 | `ComBaconExtra` | Acrescenta `+ bacon extra` à descrição e R$ 6,00 ao preço |
-| `Pedido` | Cuida de **uma** comanda: número, cliente e lista de `ItemCardapio` |
-| `GerenciadorPedidos` | Guarda **todos** os pedidos (`HashMap`), gera o número e soma o total do dia |
-| `Restaurante` | Coordena as operações, pede os lanches à factory e aplica a personalização escolhida |
-| `MenuConsole` | Toda a leitura (`Scanner`) e exibição (`System.out`), incluindo a pergunta de quais ingredientes retirar |
+| `Pedido` | Cuida de **uma** comanda: número, cliente e lista de `ItemCardapio`. Também remove um item pela posição |
+| `GerenciadorPedidos` | Guarda **todos** os pedidos (`HashMap`), gera o número, soma o total do dia e cancela pedidos |
+| `Restaurante` | Coordena as operações, pede os lanches à factory, aplica a personalização escolhida e as alterações no pedido |
+| `MenuConsole` | Toda a leitura (`Scanner`) e exibição (`System.out`), incluindo a pergunta de quais ingredientes retirar e o menu de modificação do pedido |
 | `Main` | Controla o fluxo principal (loop e `switch`), sem cálculo nem impressão |
 
 `Pedido` e `GerenciadorPedidos` são classes separadas de propósito (o S do SOLID): o pedido não sabe quantos pedidos existem, e o gerenciador não sabe calcular o total de uma comanda.
@@ -85,6 +85,7 @@ Com isso, dá para trocar o console por outra interface (por exemplo, uma tela g
 - **Lanche:** o nome não pode ser nulo nem vazio, e o preço não pode ser negativo. O construtor reutiliza os setters, então a validação fica em um lugar só. Valor inválido lança `IllegalArgumentException`. A lista de ingredientes é copiada na criação, então dois lanches nunca compartilham a mesma lista.
 - **Pedido:** o nome do cliente não pode ser nulo nem vazio. O número chega pronto pelo construtor. `adicionarItem` recebe um `ItemCardapio` (não só `Lanche`). `calcularTotal()` percorre a lista com `for`.
 - **Personalização:** o cliente pode retirar queijo, alface, tomate ou cebola. Retirar ingrediente muda só a descrição (`X-Bacon sem cebola`), nunca o preço. Os quatro campos nascem com `= true` na declaração, senão o `boolean` começaria `false` e o lanche viria sem nada. Cada item do pedido é um objeto novo, então a personalização de um pedido não afeta outro.
+- **Modificar pedido:** o pedido é buscado pelo número e pode receber um item novo, perder um item (escolhido pelo número na lista) ou ser cancelado inteiro. Um lanche já criado nunca é editado: para trocar um X-Bacon por um X-Bacon sem cebola, remove-se o item anterior e acrescenta-se o novo. O total sempre reflete a lista atualizada, e um pedido cancelado sai do total do dia.
 - **Adicionais:** cada adicional embrulha um `ItemCardapio`, soma o seu preço ao do item embrulhado e acrescenta a sua descrição no formato exato `+ cheddar` ou `+ bacon extra` (espaço, sinal de mais, espaço, minúsculas). Embrulhar um item nulo lança `IllegalArgumentException`. O lanche original nunca é alterado.
 - **GerenciadorPedidos:** `criarPedido` gera o número com `contadorPedidos++`. O usuário nunca digita o número de um pedido novo, então a numeração não se repete (o `HashMap` não recusa chave repetida, ele **substitui**).
 - **Lanche novo a cada escolha:** cada método da `LancheFactory` faz `new Lanche(...)` a cada chamada. Dois clientes que pedem X-Bacon recebem objetos diferentes, e alterar um não muda o outro.
@@ -181,6 +182,35 @@ Deseja adicionar mais um item? (s/n): n
 
 Pedido #1 - Cliente: Brianna
   - X-Bacon sem cebola - R$ 22,00
+  Total: R$ 22,00
+```
+
+**A partir do Nível 3**, a opção 4 do menu modifica um pedido (formato produzido pelo código; aqui o pedido #1 tem X-Bacon e X-Salada):
+
+```
+Opção: 4
+Número do pedido: 1
+
+Pedido #1 - Cliente: Brianna
+  - X-Bacon - R$ 22,00
+  - X-Salada - R$ 18,00
+  Total: R$ 40,00
+
+--- Modificar pedido ---
+1 - Acrescentar item
+2 - Remover item
+3 - Cancelar pedido inteiro
+0 - Voltar
+Opção: 2
+
+Itens do pedido #1:
+  1 - X-Bacon - R$ 22,00
+  2 - X-Salada - R$ 18,00
+Número do item a remover: 2
+Item removido.
+
+Pedido #1 - Cliente: Brianna
+  - X-Bacon - R$ 22,00
   Total: R$ 22,00
 ```
 
@@ -423,17 +453,52 @@ segundo.getDescricao();   // "X-Bacon"
 
 ---
 
-### 9. Testes com JUnit
+### 9. Modificar um pedido (Nível 3)
 
-Foram escritos 31 testes em `src/test/java`, seguindo o padrão AAA (Arrange, Act, Assert):
+**O que faz:** a opção 4 do menu busca um pedido pelo número e permite três alterações.
+
+| Operação | O que acontece | Quem faz |
+|---|---|---|
+| Acrescentar item | Escolhe o lanche, retira ingredientes e adiciona ao pedido | `Main.adicionarUmItem` → `Restaurante.adicionarItem` |
+| Remover item | Lista os itens numerados e remove o escolhido pelo número | `MenuConsole.exibirItensNumerados` → `Restaurante.removerItem` → `Pedido.removerItem` |
+| Cancelar pedido | Pede confirmação e remove o pedido inteiro | `Restaurante.cancelarPedido` → `GerenciadorPedidos.cancelarPedido` |
+
+**Modificar não é editar um lanche que já existe.** Se o cliente quer trocar um X-Bacon por um X-Bacon sem cebola, o sistema remove o item anterior e acrescenta um item novo, personalizado. Assim cada item do pedido continua independente, e a personalização de um lanche não afeta outros pedidos.
+
+```java
+// Pedido
+public void removerItem(int indice) {
+    if (indice < 0 || indice >= itens.size()) {
+        throw new IllegalArgumentException("Esse item não existe no pedido.");
+    }
+    itens.remove(indice);
+}
+
+// GerenciadorPedidos
+public boolean cancelarPedido(int numero) {
+    return pedidos.remove(numero) != null;
+}
+```
+
+**O total acompanha a lista.** O `calcularTotal()` percorre a lista de itens cada vez que é chamado, então qualquer item acrescentado ou removido já aparece no total, sem precisar atualizar nada manualmente.
+
+**Cancelar tira o pedido do total do dia.** O pedido sai do `HashMap`, e o `calcularTotalDoDia()` só soma o que está lá. O contador de pedidos não volta atrás, então o número de um pedido cancelado nunca é reaproveitado por outro.
+
+**A posição que a pessoa vê começa em 1**, enquanto a lista do Java começa em 0. A conversão (`posicao - 1`) é feita na `Restaurante`, e não no menu.
+
+---
+
+### 10. Testes com JUnit
+
+Foram escritos 38 testes em `src/test/java`, seguindo o padrão AAA (Arrange, Act, Assert):
 
 | Classe de teste | Testes |
 |---|---|
 | `LancheTest` (11) | lanche válido guarda nome e preço; nome vazio, nome nulo e preço negativo lançam exceção; lanche é um `ItemCardapio`; lanche novo vem com todos os ingredientes; retirar cebola muda a descrição; vários ingredientes na ordem certa; retirar ingrediente não muda o preço; retirar ingrediente que não tinha; personalizar um lanche não afeta outro |
 | `LancheFactoryTest` (5) | nome, preço e ingredientes de cada lanche (3 testes); duas chamadas devolvem objetos diferentes; alterar um lanche não afeta o outro |
 | `AdicionaisTest` (7) | `ComCheddar` e `ComBaconExtra` sozinhos; exemplo completo `X-Bacon + cheddar + bacon extra` = R$ 32,00; ordem invertida muda a descrição mas não o preço; lanche original não é alterado; item nulo lança exceção; adicional sobre lanche personalizado (`X-Bacon sem cebola + cheddar`) |
-| `PedidoTest` (5) | total soma o preço dos itens; pedido sem itens tem total zero; cliente vazio lança exceção; pedido aceita qualquer `ItemCardapio`; pedido soma um lanche com adicionais |
-| `GerenciadorPedidosTest` (3) | números sequenciais e sem repetição; buscar pedido inexistente devolve `null`; total do dia soma todos os pedidos |
+| `PedidoTest` (9) | total soma o preço dos itens; pedido sem itens tem total zero; cliente vazio lança exceção; pedido aceita qualquer `ItemCardapio`; pedido soma um lanche com adicionais; remover item atualiza lista e total; remover posição inexistente lança exceção; trocar X-Bacon por X-Bacon sem cebola; remover todos os itens zera o total |
+| `GerenciadorPedidosTest` (6) | números sequenciais e sem repetição; buscar pedido inexistente devolve `null`; total do dia soma todos os pedidos; cancelar pedido tira do total do dia; cancelar pedido inexistente devolve `false`; número de pedido cancelado não é reutilizado |
 
 Exemplo de teste:
 
@@ -463,9 +528,9 @@ mvn test
 [INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in cardapio.AdicionaisTest
 [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in cardapio.LancheFactoryTest
 [INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- in cardapio.LancheTest
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in pedido.GerenciadorPedidosTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in pedido.PedidoTest
-[INFO] Tests run: 31, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in pedido.GerenciadorPedidosTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0 -- in pedido.PedidoTest
+[INFO] Tests run: 38, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
 
@@ -475,7 +540,7 @@ mvn test
 
 ---
 
-### 10. Como rodar o sistema
+### 11. Como rodar o sistema
 
 Pré-requisitos: JDK 17 ou superior e Maven (`sudo apt install maven`).
 
@@ -486,7 +551,7 @@ java -cp target/classes app.Main
 
 ---
 
-### 11. Problemas que apareceram no caminho
+### 12. Problemas que apareceram no caminho
 
 | Problema | Causa | Solução |
 |---|---|---|
@@ -498,7 +563,7 @@ java -cp target/classes app.Main
 
 ---
 
-### 12. O que foi aprendido
+### 13. O que foi aprendido
 
 - Organizar o projeto em pacotes com dependências em uma direção só.
 - Centralizar a validação nos setters e reutilizá-los no construtor.
@@ -509,9 +574,11 @@ java -cp target/classes app.Main
 - Usar o Decorator para combinar adicionais sem criar uma classe por combinação e sem alterar o `Lanche`.
 - Inicializar `boolean` na declaração (`= true`), porque o valor padrão em Java é `false`.
 - Criar um objeto novo para cada item do pedido, para que a personalização de um não afete outro.
+- Modificar um pedido removendo e acrescentando itens, em vez de editar um objeto que já existe.
+- Converter a posição que a pessoa vê (começa em 1) para o índice da lista (começa em 0) em um único lugar.
 - Escrever testes unitários com AAA e `assertThrows` para as regras de validação.
 - Usar o `javac` direto para ver a linha exata do erro, que é mais claro que a saída do Maven.
 
-### 13. Próximos passos
+### 14. Próximos passos
 
 - Nível 3: continuar com os próximos itens do enunciado (por exemplo, oferecer os adicionais no menu).

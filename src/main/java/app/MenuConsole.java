@@ -19,6 +19,7 @@ public class MenuConsole {
         System.out.println("1 - Registrar novo pedido");
         System.out.println("2 - Listar pedidos do dia");
         System.out.println("3 - Fechar restaurante");
+        System.out.println("4 - Modificar pedido");
         System.out.println("0 - Sair");
         System.out.print("Opção: ");
     }
@@ -104,6 +105,40 @@ public class MenuConsole {
         System.out.println();
         System.out.println("=== FECHAMENTO DO DIA ===");
         System.out.println("Total arrecadado: " + formatarPreco(total));
+    }
+
+    public int lerNumeroPedido() {
+        System.out.print("Número do pedido: ");
+        return lerInteiro();
+    }
+
+    public void exibirMenuModificacao() {
+        System.out.println();
+        System.out.println("--- Modificar pedido ---");
+        System.out.println("1 - Acrescentar item");
+        System.out.println("2 - Remover item");
+        System.out.println("3 - Cancelar pedido inteiro");
+        System.out.println("0 - Voltar");
+        System.out.print("Opção: ");
+    }
+
+    public void exibirItensNumerados(Pedido pedido) {
+        System.out.println();
+        System.out.println("Itens do pedido #" + pedido.getNumero() + ":");
+        int posicao = 1;
+        for (ItemCardapio item : pedido.getItens()) {
+            System.out.println("  " + posicao + " - " + item.getDescricao() + " - " + formatarPreco(item.getPreco()));
+            posicao++;
+        }
+    }
+
+    public int lerNumeroItem() {
+        System.out.print("Número do item a remover: ");
+        return lerInteiro();
+    }
+
+    public boolean confirmarCancelamento(int numeroPedido) {
+        return lerSimNao("Cancelar o pedido #" + numeroPedido + " inteiro? (s/n): ");
     }
 
     public void exibirMensagem(String mensagem) {

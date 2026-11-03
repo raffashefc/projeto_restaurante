@@ -84,6 +84,21 @@ public class RestauranteFacade {
         }
     }
 
+    // A posição é a que a pessoa viu na lista numerada (começa em 1).
+    // Devolve false se o pedido ou a posição não existirem.
+    public boolean removerItem(int numeroPedido, int posicao) {
+        Pedido pedido = gerenciador.buscarPedido(numeroPedido);
+        if (pedido == null || posicao < 1 || posicao > pedido.getItens().size()) {
+            return false;
+        }
+        pedido.removerItem(posicao - 1);
+        return true;
+    }
+
+    public boolean cancelarPedido(int numeroPedido) {
+        return gerenciador.cancelarPedido(numeroPedido);
+    }
+
     public Pedido buscarPedido(int numero) {
         return gerenciador.buscarPedido(numero);
     }

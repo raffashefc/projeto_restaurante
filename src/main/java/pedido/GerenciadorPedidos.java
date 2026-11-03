@@ -18,6 +18,12 @@ public class GerenciadorPedidos {
         return pedidos.get(numero);
     }
 
+    // Cancela o pedido inteiro: ele sai do mapa e, por isso, do total do dia.
+    // O contador não volta atrás, então o número de um pedido cancelado nunca é reutilizado.
+    public boolean cancelarPedido(int numero) {
+        return pedidos.remove(numero) != null;
+    }
+
     public Collection<Pedido> getPedidos() {
         return pedidos.values();
     }
@@ -29,4 +35,4 @@ public class GerenciadorPedidos {
         }
         return total;
     }
-} 
+}

@@ -35,6 +35,18 @@ public class Pedido {
         itens.add(item);
     }
 
+    // Remove o item da posição indicada (começa em 0). O total reflete a lista atualizada.
+    public void removerItem(int indice) {
+        if (indice < 0 || indice >= itens.size()) {
+            throw new IllegalArgumentException("Esse item não existe no pedido.");
+        }
+        itens.remove(indice);
+    }
+
+    public boolean estaVazio() {
+        return itens.isEmpty();
+    }
+
     public ArrayList<ItemCardapio> getItens() {
         return itens;
     }
