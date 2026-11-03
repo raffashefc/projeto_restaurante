@@ -1,4 +1,4 @@
-### Projeto 1: Sistema de Restaurante (Níveis 1, 2 e 3)
+### Projeto 1: Sistema de Restaurante
 
 ### Objetivo
 
@@ -7,6 +7,8 @@ Construir o sistema de um restaurante em Java, com cardápio, pedidos e fechamen
 - **Nível 1:** cardápio, pedidos e fechamento do dia.
 - **Nível 2:** interface `ItemCardapio`, `LancheFactory` e adicionais com Decorator.
 - **Nível 3 (até aqui):** personalização do lanche (retirar ingredientes sem mudar o preço), modificação de pedidos (acrescentar item, remover item e cancelar pedido), combinações diferentes no fechamento do dia (3.3) e entrada inválida que não quebra o sistema (3.4).
+
+[Vídeo de demonstração](https://drive.google.com/file/d/1G6-JZScvNFFA7eRqavZD9AJTshGArQxZ/view?usp=sharing)
 
 ---
 
@@ -151,16 +153,10 @@ Opção: 3
 
 === FECHAMENTO DO DIA ===
 Total arrecadado: R$ 40,00
-Combinações diferentes pedidas: 2
-  - X-Bacon
-  - X-Salada
 
 Opção: 0
 Até logo!
 ```
-
-![saida cli](/src/asset/image1.png)
-![saida cli](/src/asset/image2.png)
 
 **A partir do Nível 2**, o cardápio também mostra os ingredientes de cada lanche:
 
@@ -219,13 +215,35 @@ Pedido #1 - Cliente: Brianna
   Total: R$ 22,00
 ```
 
+**A partir do Nível 3 (item 3.3)**, o fechamento do dia também mostra as combinações diferentes que foram pedidas (formato produzido pelo código; aqui, o dia teve os pedidos do exemplo da Brianna):
+
+```
+=== FECHAMENTO DO DIA ===
+Total arrecadado: R$ 40,00
+Combinações diferentes pedidas: 2
+  - X-Bacon
+  - X-Salada
+```
+
 **A partir do Nível 3 (item 3.4)**, uma entrada inválida não derruba o programa (formato produzido pelo código):
 
 ```
+=== RESTAURANTE ===
+1 - Registrar novo pedido
+2 - Listar pedidos do dia
+3 - Fechar restaurante
+4 - Modificar pedido
+0 - Sair
 Opção: abc
-Entrada inválida. Digite apenas números.
-Opção: 9
+Entrada inválida. Digite um número: 9
 Opção inexistente. Escolha uma das opções do menu.
+
+=== RESTAURANTE ===
+1 - Registrar novo pedido
+2 - Listar pedidos do dia
+3 - Fechar restaurante
+4 - Modificar pedido
+0 - Sair
 Opção: 1
 Nome do cliente: Brianna
 
@@ -234,11 +252,11 @@ Nome do cliente: Brianna
 2 - X-Salada - R$ 18,00
 3 - X-Bacon - R$ 22,00
 Escolha o lanche: x
-Entrada inválida. Digite apenas números.
-Escolha o lanche: 7
-Opção inexistente. Escolha um lanche de 1 a 3.
-Escolha o lanche: 3
+Entrada inválida. Digite um número: 7
+Lanche inválido, tente de novo.
 ```
+
+Depois dessa mensagem o cardápio é mostrado de novo, e a pessoa escolhe outra vez.
 
 **O que cada classe fez nesse caminho:**
 
@@ -254,7 +272,7 @@ Escolha o lanche: 3
 | Repetir com a escolha `2` (X-Salada) | Mesmo caminho, com um `Lanche` novo vindo da factory |
 | Calcular R$ 40,00 | `Pedido.calcularTotal` (22 + 18) |
 | Mostrar o pedido | `MenuConsole.exibirPedido` |
-| Fechamento do dia | `GerenciadorPedidos.calcularTotalDoDia` e `GerenciadorPedidos.listarCombinacoes` → `MenuConsole.exibirFechamentoDoDia` |
+| Fechamento do dia | `GerenciadorPedidos.calcularTotalDoDia` e `GerenciadorPedidos.getCombinacoesDoDia` → `MenuConsole.exibirFechamentoDoDia` |
 | Entrada inválida em qualquer número (Nível 3) | `MenuConsole.lerInteiro` avisa, limpa o `Scanner` e pergunta de novo |
 
 Repare que o `Main` só repassa o que o `MenuConsole` leu para a `Restaurante`, e o que ela devolve para o `MenuConsole` exibir.
@@ -523,8 +541,8 @@ public boolean cancelarPedido(int numero) {
 
 ```java
 // GerenciadorPedidos
-public Set<String> listarCombinacoes() {
-    Set<String> combinacoes = new HashSet<>();
+public HashSet<String> getCombinacoesDoDia() {
+    HashSet<String> combinacoes = new HashSet<>();
     for (Pedido pedido : pedidos.values()) {
         for (ItemCardapio item : pedido.getItens()) {
             combinacoes.add(item.getDescricao());
@@ -534,7 +552,7 @@ public Set<String> listarCombinacoes() {
 }
 ```
 
-Exemplo: se no dia saíram vários pedidos e as combinações foram `X-Bacon`, `X-Bacon + cheddar` e `X-Salada (sem tomate)`, o conjunto tem 3 elementos, não importa quantas vezes cada uma foi pedida.
+Exemplo: se no dia saíram vários pedidos e as combinações foram `X-Bacon`, `X-Bacon + cheddar` e `X-Salada sem tomate`, o conjunto tem 3 elementos, não importa quantas vezes cada uma foi pedida.
 
 ```
 === FECHAMENTO DO DIA ===
@@ -551,6 +569,12 @@ Combinações diferentes pedidas: 3
 - **A ordem de um `HashSet` não é garantida.** Por isso o `MenuConsole` copia o conjunto para um `TreeSet` só na hora de exibir, e a lista sai sempre em ordem alfabética. A contagem (`size()`) vem do `HashSet` e não muda.
 - **Quem faz o quê:** `GerenciadorPedidos` monta o conjunto (regra de negócio), a `Restaurante` repassa, e o `MenuConsole.exibirFechamentoDoDia(total, combinacoes)` mostra o `size()` e os elementos. O `Main` só chama.
 
+**Limitação: a ordem dos adicionais.** `X-Bacon + cheddar + bacon extra` e `X-Bacon + bacon extra + cheddar` têm os mesmos adicionais e o mesmo preço, mas as descrições são textos diferentes, então o `HashSet` conta **duas** combinações.
+
+- **Por que acontece:** a combinação é identificada pelo texto, e o texto depende da ordem em que os decorators foram empilhados. Isso é um detalhe de como o código monta o objeto, e não do que o cliente pediu.
+- **A ordem deveria importar?** Não. Para a cozinha, os dois pedidos são o mesmo lanche, e contar duas combinações distorce a estatística.
+- **Como resolver:** (1) ordenar os adicionais antes de montar a descrição; (2) comparar por uma chave separada da descrição (lanche base + um `Set` de adicionais, onde a ordem não existe); ou (3) guardar os adicionais como um `Set` dentro do próprio item, em vez de camadas embrulhadas. A terceira é a mais limpa, mas abandona o Decorator. É um trade-off: o Decorator facilita acrescentar adicionais, mas dificulta perguntar "quais adicionais este item tem?", porque a informação fica espalhada em camadas.
+
 É o mesmo `HashSet` do Petshop, aplicado a outro contexto.
 
 ---
@@ -561,30 +585,19 @@ Combinações diferentes pedidas: 3
 
 **Antes:** `lerInteiro()` lia a linha e convertia com `Integer.parseInt`, devolvendo `-1` quando falhava. Não travava, mas a pessoa não recebia aviso nenhum: o `-1` caía no `default` do `switch` ou virava "pedido não encontrado". Agora o erro é avisado e a pergunta é repetida.
 
-**A solução:** um único método privado no `MenuConsole` que todas as leituras numéricas usam. Ele recebe a mensagem (para repeti-la a cada tentativa), repete até receber um número e, depois de capturar a exceção, limpa a linha inválida com `scanner.nextLine()`.
+**A solução:** um único método privado no `MenuConsole` que todas as leituras numéricas usam. Ele repete até receber um número e, depois de capturar a exceção, limpa a linha inválida com `scanner.nextLine()`.
 
 ```java
-private int lerInteiro(String mensagem) {
+private int lerInteiro() {
     while (true) {
-        System.out.print(mensagem);
         try {
             int valor = scanner.nextInt();
             scanner.nextLine();   // consome o Enter que sobrou
             return valor;
         } catch (InputMismatchException e) {
-            System.out.println("Entrada inválida. Digite apenas números.");
             scanner.nextLine();   // descarta a linha inválida (evita o loop infinito)
+            System.out.print("Entrada inválida. Digite um número: ");
         }
-    }
-}
-
-private int lerInteiroNoIntervalo(String mensagem, int min, int max, String avisoFora) {
-    while (true) {
-        int valor = lerInteiro(mensagem);
-        if (valor >= min && valor <= max) {
-            return valor;
-        }
-        System.out.println(avisoFora);
     }
 }
 ```
@@ -593,19 +606,17 @@ private int lerInteiroNoIntervalo(String mensagem, int min, int max, String avis
 
 | Método do `MenuConsole` | O que lê | Como trata |
 |---|---|---|
-| `lerOpcao` | Opção do menu principal e do menu de modificação | `lerInteiro("Opção: ")`; número fora do menu cai no `default` do `switch`, que chama `exibirOpcaoInvalida()` |
-| `lerOpcaoLanche` | Escolha do lanche | `lerInteiroNoIntervalo` de 1 até o tamanho do cardápio (guardado em `exibirCardapio`) |
-| `lerNumeroPedido` | Número do pedido a modificar | `lerInteiro`; pedido que não existe continua sendo tratado pela `Restaurante` |
-| `lerNumeroItem` | Número do item a remover | `lerInteiro`; posição fora da lista continua sendo tratada pela `Restaurante` e pelo `Pedido` |
-
-O prompt (`"Opção: "`) saiu de `exibirMenu` e `exibirMenuModificacao` e passou para `lerOpcao`, porque ele precisa ser impresso de novo a cada tentativa.
+| `lerOpcao` | Opção do menu principal e do menu de modificação | `lerInteiro()`; número fora do menu cai no `default` do `switch`, que chama `exibirOpcaoInvalida()` |
+| `lerOpcaoLanche` | Escolha do lanche | `lerInteiro()`; número fora do cardápio é recusado com "Lanche inválido, tente de novo." |
+| `lerNumeroPedido` | Número do pedido a modificar | `lerInteiro()`; pedido que não existe mostra "Pedido não encontrado." |
+| `lerNumeroItem` | Número do item a remover | `lerInteiro()`; posição fora da lista mostra "Item inválido." |
 
 **Duas situações diferentes, dois tratamentos:**
 
 | Situação | Exemplo | Quem resolve |
 |---|---|---|
 | Tipo errado (letra no lugar de número) | `abc` | `InputMismatchException`, capturada em `lerInteiro` |
-| Número fora do que existe | `9` no menu, `7` no cardápio | Verificação de intervalo ou `default` do `switch`, sem exceção |
+| Número fora do que existe | `9` no menu, `7` no cardápio | `default` do `switch` ou validação no fluxo, sem exceção |
 
 **Por que a mensagem fica no `MenuConsole`:** ler, avisar e tentar de novo é conversa com a pessoa, que é responsabilidade da camada de tela. O `Main` não imprime nada: o `default` do `switch` apenas chama `menu.exibirOpcaoInvalida()`.
 
@@ -661,9 +672,6 @@ mvn test
 [INFO] BUILD SUCCESS
 ```
 
-**Print da execução:**
-
-![saida cli](/src/asset/mv-teste.png)
 
 ---
 
@@ -706,6 +714,7 @@ java -cp target/classes app.Main
 - Modificar um pedido removendo e acrescentando itens, em vez de editar um objeto que já existe.
 - Converter a posição que a pessoa vê (começa em 1) para o índice da lista (começa em 0) em um único lugar.
 - Usar um `HashSet<String>` para contar elementos diferentes: o conjunto não aceita repetidos, e o `size()` já é a resposta.
+- Perceber a limitação de comparar descrições como texto: a ordem dos adicionais gera combinações "diferentes" que, para o cliente, são a mesma.
 - Tratar `InputMismatchException` e limpar o `Scanner` com `nextLine()` para evitar loop infinito.
 - Concentrar a leitura numérica em um único método (`lerInteiro`), em vez de repetir `try/catch` em cada leitura.
 - Consumir o Enter que sobra depois do `nextInt()` para não bagunçar as leituras com `nextLine()`.
@@ -715,5 +724,14 @@ java -cp target/classes app.Main
 
 ### 16. Próximos passos
 
-- Nível 3: continuar com os próximos itens do enunciado (por exemplo, oferecer os adicionais no menu).
-- Testes: cobrir `listarCombinacoes()` (repetidos contam uma vez, `X-Bacon` e `X-Bacon + cheddar` contam duas).
+- Implementar Sessão Bônus :
+    - registre gorjetas e apresente um relatório no fechamento.
+    - crie a classe no pacote financeiro, com uma responsabilidade definida. Por exemplo, guardar as transações do dia e calcular o fechamento. Só deve existir um objeto Caixa no sistema.
+    - crie a classe no pacote financeiro e implemente equals() e hashCode(). Cada pedido pago pode gerar uma transação com o número do pedido e o valor. Você pode guardar as transações em um HashSet<Transacao> para evitar registros duplicados, desde que defina corretamente quando duas transações são consideradas iguais.
+    - escreva três testes além dos testes obrigatórios dos níveis anteriores. Eles devem cobrir funcionalidades ainda não testadas, como o filtro de descrições repetidas, o cálculo do fechamento e o cancelamento de um pedido.
+    - gere um arquivo executável para facilitar a demonstração do sistema.
+    além das combinações do item 3.3, mostre quantos lanches base diferentes saíram. Por exemplo, X-Bacon e X-Bacon + cheddar contam como o mesmo lanche base.
+- Demais atualizações e funcionalidades :
+    - Oferecer os adicionais no menu
+    - Resolver a ordem dos adicionais
+    
