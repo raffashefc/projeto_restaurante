@@ -4,6 +4,7 @@ import cardapio.ItemCardapio;
 import cardapio.Lanche;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
@@ -14,6 +15,8 @@ import pedido.Pedido;
 public class MenuConsole {
     private static final Locale BR = Locale.forLanguageTag("pt-BR");
     private Scanner scanner = new Scanner(System.in);
+    // Guardado em exibirCardapio para validar a escolha do lanche sem o Main precisar informar.
+    private int totalLanches = Integer.MAX_VALUE;
 
     public void exibirMenu() {
         System.out.println();
@@ -23,11 +26,15 @@ public class MenuConsole {
         System.out.println("3 - Fechar restaurante");
         System.out.println("4 - Modificar pedido");
         System.out.println("0 - Sair");
-        System.out.print("Opção: ");
     }
 
+    // Lê a opção do menu principal e do menu de modificação.
     public int lerOpcao() {
-        return lerInteiro();
+        return lerInteiro("Opção: ");
+    }
+
+    public void exibirOpcaoInvalida() {
+        System.out.println("Opção inexistente. Escolha uma das opções do menu.");
     }
 
     public String lerNomeCliente() {
@@ -36,6 +43,7 @@ public class MenuConsole {
     }
 
     public void exibirCardapio(List<Lanche> cardapio) {
+        totalLanches = cardapio.size();
         System.out.println();
         System.out.println("--- Cardápio ---");
         for (int i = 0; i < cardapio.size(); i++) {
@@ -46,8 +54,8 @@ public class MenuConsole {
     }
 
     public int lerOpcaoLanche() {
-        System.out.print("Escolha o lanche: ");
-        return lerInteiro();
+        return lerInteiroNoIntervalo("Escolha o lanche: ", 1, totalLanches,
+                "Opção inexistente. Escolha um lanche de 1 a " + totalLanches + ".");
     }
 
     public boolean perguntarMaisItem() {
@@ -115,8 +123,7 @@ public class MenuConsole {
     }
 
     public int lerNumeroPedido() {
-        System.out.print("Número do pedido: ");
-        return lerInteiro();
+        return lerInteiro("Número do pedido: ");
     }
 
     public void exibirMenuModificacao() {
@@ -126,7 +133,6 @@ public class MenuConsole {
         System.out.println("2 - Remover item");
         System.out.println("3 - Cancelar pedido inteiro");
         System.out.println("0 - Voltar");
-        System.out.print("Opção: ");
     }
 
     public void exibirItensNumerados(Pedido pedido) {
@@ -140,8 +146,7 @@ public class MenuConsole {
     }
 
     public int lerNumeroItem() {
-        System.out.print("Número do item a remover: ");
-        return lerInteiro();
+        return lerInteiro("Número do item a remover: ");
     }
 
     public boolean confirmarCancelamento(int numeroPedido) {
@@ -156,11 +161,28 @@ public class MenuConsole {
         scanner.close();
     }
 
-    private int lerInteiro() {
-        try {
-            return Integer.parseInt(scanner.nextLine().trim());
-        } catch (NumberFormatException e) {
-            return -1;
+    // Todas as leituras numéricas passam por aqui: avisa, limpa o Scanner e pergunta de novo.
+    private int lerInteiro(String mensagem) {
+        while (true) {
+            System.out.print(mensagem);
+            try {
+                int valor = scanner.nextInt();
+                scanner.nextLine(); // consome o Enter que sobrou depois do número
+                return valor;
+            } catch (InputMismatchException e) {
+                System.out.println("Entrada inválida. Digite apenas números.");
+                scanner.nextLine(); // descarta a linha inválida; sem isso, loop infinito
+            }
+        }
+    }
+
+    private int lerInteiroNoIntervalo(String mensagem, int min, int max, String avisoFora) {
+        while (true) {
+            int valor = lerInteiro(mensagem);
+            if (valor >= min && valor <= max) {
+                return valor;
+            }
+            System.out.println(avisoFora);
         }
     }
 

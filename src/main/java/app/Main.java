@@ -32,7 +32,7 @@ public class Main {
                     menu.exibirMensagem("Até logo!");
                     break;
                 default:
-                    menu.exibirMensagem("Opção inválida.");
+                    menu.exibirOpcaoInvalida();
             }
         }
         menu.fechar();
@@ -56,18 +56,11 @@ public class Main {
         menu.exibirPedido(pedido);
     }
 
-    // Escolhe um lanche (repete até a opção ser válida), pergunta os ingredientes
-    // a retirar e adiciona ao pedido. Usado ao criar e ao modificar um pedido.
+    // A escolha do lanche já chega validada (1 até o tamanho do cardápio):
+    // a leitura, o aviso e a nova tentativa ficam no MenuConsole.
     private static void adicionarUmItem(RestauranteFacade sistema, MenuConsole menu, Pedido pedido) {
-        int escolha;
-        while (true) {
-            menu.exibirCardapio(sistema.getCardapio());
-            escolha = menu.lerOpcaoLanche();
-            if (sistema.opcaoLancheValida(escolha)) {
-                break;
-            }
-            menu.exibirMensagem("Lanche inválido, tente de novo.");
-        }
+        menu.exibirCardapio(sistema.getCardapio());
+        int escolha = menu.lerOpcaoLanche();
 
         List<String> retirar = menu.lerIngredientesParaRetirar();
         sistema.adicionarItem(pedido.getNumero(), escolha, retirar);
@@ -106,7 +99,7 @@ public class Main {
                     modificando = false;
                     break;
                 default:
-                    menu.exibirMensagem("Opção inválida.");
+                    menu.exibirOpcaoInvalida();
             }
         }
     }
