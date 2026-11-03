@@ -1,12 +1,30 @@
 package cardapio;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class Lanche implements ItemCardapio {
     private String nome;
     private double preco;
+    private List<String> ingredientes = new ArrayList<>();
 
     public Lanche(String nome, double preco) {
         setNome(nome);
         setPreco(preco);
+    }
+
+    public Lanche(String nome, double preco, List<String> ingredientes) {
+        this(nome, preco);
+        if (ingredientes == null) {
+            throw new IllegalArgumentException("A lista de ingredientes não pode ser nula.");
+        }
+        // Cópia: cada Lanche tem a sua própria lista, nunca compartilhada.
+        this.ingredientes = new ArrayList<>(ingredientes);
+    }
+
+    public List<String> getIngredientes() {
+        return Collections.unmodifiableList(ingredientes);
     }
 
     public String getNome() {

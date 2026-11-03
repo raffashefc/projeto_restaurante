@@ -4,7 +4,7 @@ import pedido.Pedido;
 
 public class Main {
     public static void main(String[] args) {
-        Restaurante sistema = new Restaurante();
+        RestauranteFacade sistema = new RestauranteFacade();
         MenuConsole menu = new MenuConsole();
 
         boolean rodando = true;
@@ -34,7 +34,7 @@ public class Main {
         menu.fechar();
     }
 
-    private static void registrarPedido(Restaurante sistema, MenuConsole menu) {
+    private static void registrarPedido(RestauranteFacade sistema, MenuConsole menu) {
         Pedido pedido;
         try {
             pedido = sistema.registrarPedido(menu.lerNomeCliente());

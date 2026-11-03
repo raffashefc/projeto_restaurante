@@ -1,13 +1,14 @@
 package app;
 
 import cardapio.Lanche;
+import cardapio.LancheFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import pedido.GerenciadorPedidos;
 import pedido.Pedido;
 
-public class Restaurante {
+public class RestauranteFacade {
     private GerenciadorPedidos gerenciador = new GerenciadorPedidos();
 
     // Devolve objetos novos a cada chamada: nenhum Lanche é compartilhado entre pedidos.
@@ -19,15 +20,15 @@ public class Restaurante {
         return cardapio;
     }
 
-    // Cria um Lanche NOVO a cada chamada. Devolve null se a opção não existir.
+    // Pede o lanche à factory (sempre uma instância nova). Devolve null se a opção não existir.
     public Lanche criarLanche(int opcao) {
         switch (opcao) {
             case 1:
-                return new Lanche("X-Burger", 16.00);
+                return LancheFactory.xBurger();
             case 2:
-                return new Lanche("X-Salada", 18.00);
+                return LancheFactory.xSalada();
             case 3:
-                return new Lanche("X-Bacon", 22.00);
+                return LancheFactory.xBacon();
             default:
                 return null;
         }
@@ -59,4 +60,4 @@ public class Restaurante {
     public double calcularTotalDoDia() {
         return gerenciador.calcularTotalDoDia();
     }
-} 
+}

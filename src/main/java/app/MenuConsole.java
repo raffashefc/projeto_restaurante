@@ -37,6 +37,7 @@ public class MenuConsole {
         for (int i = 0; i < cardapio.size(); i++) {
             Lanche l = cardapio.get(i);
             System.out.println((i + 1) + " - " + l.getNome() + " - " + formatarPreco(l.getPreco()));
+            System.out.println("      " + String.join(", ", l.getIngredientes()));
         }
     }
 
